@@ -8,18 +8,29 @@
     <script src="js/jspsych/dist/plugin-image-keyboard-response.js"></script>
     <script src="js/jspsych/dist/plugin-html-button-response.js"></script>
     <script src="js/jspsych/dist/plugin-html-keyboard-response.js"></script>
+    <script src="js/jspsych/dist/plugin-fullscreen.js"></script>
+    <script src="js/jspsych/dist/plugin-survey-likert.js"></script>
     <link rel="stylesheet" href="css/jspsych.css">
+    <link rel="stylesheet" href="css/custom_jspsych.css">
     <link href="img/favicon.ico" rel="icon">
 </head>
 
-<body></body>
+<body>
+</body>
 
 <script>
+    // just copy paste this somewhere at the top
+    const queryString = window.location.search;
+    const urlParams = new URLSearchParams(queryString);
+    var SUBJECT = 'unknown'
+    if (urlParams.has('SUBJECT')) {SUBJECT = urlParams.get('SUBJECT'); }
+    var SUFFIX = 'unknown'
+    if (urlParams.has('SUFFIX')) {SUFFIX = '_' + urlParams.get('SUFFIX');}
 
     // retrieve information
 
     // name the current session
-    var basename = 'expNOWdata'
+    var basename = 'expNOWdata_' + SUBJECT + SUFFIX;
 
     // get timestamp of initial loading of the script
     var currDate = new Date();
@@ -32,16 +43,16 @@
 
     // define timing parameters in milliseconds (jsPsych default unit)
     expdef["choiceMaxDuration"] = 3000;
-    expdef["feedbackDuration"] = 1000;
-    expdef["fixationDuration"] = 1000;
+    expdef["feedbackDuration"] = 500;
+    expdef["fixationDuration"] = 250;
 
     // define default repetition of images within blocks
     expdef["defaultRepetition"] = 1;
 
     // define the message displayed at the beginning of the experiment
-    expdef["experimentIntroMsg"] = "<p>In this short experiment, you will have to learn to associate " +
-        "specific images with specific response buttons, by trial and error.<br>" +
-        "The experiment is divived in blocks that correspond to different categories of images.</p>"
+    expdef["experimentIntroMsg"] = `<p>${SUBJECT}In this short experiment, you will have to learn to associate ` +
+        `specific images with specific r1esponse buttons, by trial and error.<br>` +
+        `The experiment is divived in blocks that correspond to different categories of images.</p>`
     expdef["experimentIntroButton"] = ["Click here to start the experiment"]
 
     // define the message displayed at the end of the experiment
@@ -82,9 +93,26 @@
         "pumpkin"
     ]
 
+    imageNames['desserts'] = ["brownie","cake","dessert","donut","ice-cream_cone","milkshake"]
+
     //////////////////////////////////////////////////////
     // Init jsPsych
     //////////////////////////////////////////////////////
+    var display_data = function () {
+        const display_element = this.jsPsych.getDisplayElement(); // get main jsPsych div
+        display_element.innerHTML = '<pre id="jspsych-data-display"></pre>'; // add a container div
+        var data = jsPsych.data.get(); // get all collected data
+        //document.getElementById("jspsych-data-display").textContent = JSON.stringify(data, null, 2); // pretty-print
+        var correctN = data.filter({accuracy: 1}).select('accuracy').count();
+        var overallN = data.select('accuracy').count();
+        var correctRT=data.filter({accuracy: 1}).select('rt').mean();
+        var incorrectRT=data.filter({accuracy: 0}).select('rt').mean();
+        var htmlStr = '<p>You gave ' + (100*correctN/overallN).toFixed(1) + '% of correct responses. <br><br>'
+        htmlStr += '<p>On average, it took you ' + (correctRT/1000).toFixed(3) + 's to give a correct response and '
+        htmlStr += (incorrectRT/1000).toFixed(3) + 's to give an incorrect response. '
+        document.getElementById("jspsych-data-display").textContent = htmlStr;
+    };
+
 
     var jsPsych = initJsPsych({
         on_finish: function () {
@@ -109,8 +137,18 @@
                 .data
                 .get()
                 .localSave('csv', basename + '.csv');
+            display_data();
         }
     });
+
+
+    var enter_fullscreen = {
+        type: jsPsychFullscreen,
+        fullscreen_mode: true,
+        message: function () {return "<p>The experiment will now go full screen.</p>"},
+        button_label: function () {return "Click here to continue"},
+    }
+    var exit_fullscreen = {type: jsPsychFullscreen, fullscreen_mode: false}
 
 
     //////////////////////////////////////////////////////
@@ -118,10 +156,10 @@
     ////////////////////////////////////////////////////// 
 
     // block definition   
-    var includedCategories = ['vegetables', 'fruits'];
-    var setSizes = [3, 6];
-    var mapSR = [[0, 1, 2], [0, 1, 2, 0, 1, 2]];
-    var blockTrials = [expdef.defaultRepetition, expdef.defaultRepetition];
+    var includedCategories = ['vegetables', 'fruits', 'desserts'];
+    var setSizes = [3, 3, 3];
+    var mapSR = [[0, 1, 2], [0, 1, 2], [0, 1, 2]];
+    var blockTrials = [expdef.defaultRepetition, expdef.defaultRepetition, expdef.defaultRepetition];
 
     // prepare block shuffling
     var blockIdx = [];
@@ -240,6 +278,25 @@
         response_ends_trial: true,
     }
 
+    var likert_scale = [
+    "Strongly Disagree", 
+    "Disagree", 
+    "Neutral", 
+    "Agree", 
+    "Strongly Agree"
+    ];
+
+    var likert_quest = {
+    type: jsPsychSurveyLikert,
+    questions: [
+        {prompt: "I like vegetables.", name: 'Vegetables', labels: likert_scale},
+        {prompt: "I like fruit.", name: 'Fruit', labels: likert_scale},
+        {prompt: "I like desserts.", name: 'Desserts', labels: likert_scale},
+    ],
+    randomize_question_order: true
+    };
+
+
 
     //////////////////////////////////////////////////////
     // Create nest timelines
@@ -282,7 +339,7 @@
     }
 
     // main timeline, will only run once
-    var main_timeline = [experimentIntro, block_timeline, experimentEnd];
+    var main_timeline = [enter_fullscreen, experimentIntro, block_timeline, likert_quest, experimentEnd, exit_fullscreen];
 
 
     jsPsych.run(main_timeline);

@@ -11,3 +11,16 @@
 .jspsych-display-element{
   background-color: rgb(226, 226, 226);
 }
+
+/*to change all font colors of a given class */
+.whateverclass {
+  color: blue;
+}
+/*to change font weight of all several headings of a given class at once */
+.whateverclass h2,h3,h4 {
+  font-weight: 700;
+}
+/*to change the background of elements with a given ID */
+#whateverID {
+  background-color: rgb(2500, 0, 0);
+}
