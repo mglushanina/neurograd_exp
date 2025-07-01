@@ -10,6 +10,7 @@
     <script src="js/jspsych/dist/plugin-html-keyboard-response.js"></script>
     <script src="js/jspsych/dist/plugin-fullscreen.js"></script>
     <script src="js/jspsych/dist/plugin-survey-likert.js"></script>
+    <script src="js/jquery/jquery-3.7.1.js"></script>
     <link rel="stylesheet" href="css/jspsych.css">
     <link rel="stylesheet" href="css/custom_jspsych.css">
     <link href="img/favicon.ico" rel="icon">
@@ -138,6 +139,12 @@
                 .get()
                 .localSave('csv', basename + '.csv');
             display_data();
+                    $.ajax({
+        type: "POST",
+        url: "/save-file",
+        data: jsPsych.data.get().json(),
+        contentType: "application/json",
+        }).done(function () {console.log('uploaded')});
         }
     });
 
