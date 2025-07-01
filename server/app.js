@@ -1,3 +1,5 @@
+require('dotenv').config()
+
 var mongoose = require("mongoose");
 const yourName="Romain"
 const dbSchema = new mongoose.Schema({}, {
@@ -18,7 +20,6 @@ var fs = require("fs")
 var path = require("path")
 var express = require('express')
 var cors = require('cors')
-require('dotenv').config()
 
 // --- INSTANTIATE THE APP
 var app = express();
